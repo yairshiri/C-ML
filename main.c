@@ -5,12 +5,12 @@
 #include <time.h>
 
 
-double get_num(double b,double a){
-    double delta = fabs(a-b);
+double get_num(double b, double a) {
+    double delta = fabs(a - b);
     double min = a;
-    if(a > b)
+    if (a > b)
         min = b;
-    return ((double)rand()*delta/RAND_MAX + min);
+    return ((double) rand() * delta / RAND_MAX + min);
 }
 
 typedef struct matrix {
@@ -21,13 +21,13 @@ typedef struct matrix {
 } matrix;
 
 matrix *init_matrix(int height, int width, double init_value) {
-    matrix *m = (matrix*)malloc(sizeof(matrix));
+    matrix *m = (matrix *) malloc(sizeof(matrix));
     m->init = false;
     m->height = height;
     m->width = width;
-    m->data = (double**)calloc(height, sizeof(double *));
+    m->data = (double **) calloc(height, sizeof(double *));
     for (int i = 0; i < height; i++) {
-        m->data[i] =(double*) calloc(width, sizeof(double ));
+        m->data[i] = (double *) calloc(width, sizeof(double));
         for (int j = 0; j < m->width; j++) {
             m->data[i][j] = init_value;
         }
@@ -62,7 +62,6 @@ matrix *multiply(const matrix *m1, const matrix *m2) {
 }
 
 
-
 matrix *addition(const matrix *m1, const matrix *m2) {
     if (m1->height != m2->height || m1->width != m2->width || m1->init == false || m2->init == false)
         return 0;
@@ -80,7 +79,7 @@ matrix *addition(const matrix *m1, const matrix *m2) {
     return ret;
 }
 
-double matrix_sum(const matrix * m1){
+double matrix_sum(const matrix *m1) {
     double ret = 0;
     for (int i = 0; i < m1->height; i++) {
         for (int j = 0; j < m1->width; j++) {
@@ -120,40 +119,40 @@ bool set_data(matrix *m, double **data) {
 }
 
 
-
-matrix* copy_matrix(matrix *m1){
-    matrix* ret = init_matrix(m1->height,m1->width,0);
-    set_data(ret,m1->data);
+matrix *copy_matrix(matrix *m1) {
+    matrix *ret = init_matrix(m1->height, m1->width, 0);
+    set_data(ret, m1->data);
     return ret;
 }
 
-matrix* multiply_matrix_vals(matrix *m1,double scalar){
-    matrix* ret = copy_matrix(m1);
-    for (int i =0; i < ret->height;i++)
-        for(int j = 0;j<ret->width;j++)
+matrix *multiply_matrix_vals(matrix *m1, double scalar) {
+    matrix *ret = copy_matrix(m1);
+    for (int i = 0; i < ret->height; i++)
+        for (int j = 0; j < ret->width; j++)
             ret->data[i][j] *= scalar;
     return ret;
 }
-matrix* matrix_transpose(matrix* m1){
-    matrix* ret = init_matrix(m1->width,m1->height,0);
-    for(int i = 0; i < ret->height; i ++)
-        for(int j = 0;j< ret->width;j++)
+
+matrix *matrix_transpose(matrix *m1) {
+    matrix *ret = init_matrix(m1->width, m1->height, 0);
+    for (int i = 0; i < ret->height; i++)
+        for (int j = 0; j < ret->width; j++)
             ret->data[i][j] = m1->data[j][i];
     return ret;
 }
 
-matrix* matrix_pow(matrix* m1,double power){
-    matrix* ret = copy_matrix(m1);
-    for (int i =0; i < ret->height;i++)
-        for(int j = 0;j<ret->width;j++)
-            ret->data[i][j] = pow(ret->data[i][j],power);
+matrix *matrix_pow(matrix *m1, double power) {
+    matrix *ret = copy_matrix(m1);
+    for (int i = 0; i < ret->height; i++)
+        for (int j = 0; j < ret->width; j++)
+            ret->data[i][j] = pow(ret->data[i][j], power);
     return ret;
 }
 
-matrix* matrix_abs(matrix* m1){
-    matrix* ret = copy_matrix(m1);
-    for (int i =0; i < ret->height;i++)
-        for(int j = 0;j<ret->width;j++)
+matrix *matrix_abs(matrix *m1) {
+    matrix *ret = copy_matrix(m1);
+    for (int i = 0; i < ret->height; i++)
+        for (int j = 0; j < ret->width; j++)
             ret->data[i][j] = fabs(ret->data[i][j]);
     return ret;
 }
@@ -165,12 +164,21 @@ typedef struct layer {
 
     double (*activation_derivative)(double);
 
-    double * biases;
+    double *biases;
     bool init;
     int input_size;
     int output_size;
 } layer;
 
+
+double linear(double x)
+{
+    return x;
+}
+
+double linear_div(double x){
+    return 1;
+}
 double relu(double x) {
     if (x < 0.0)
         return 0;
@@ -183,9 +191,6 @@ double relu_derivative(double x) {
     return 1;
 }
 
-double reverse_sigmoid(double x){
-    return log(x/(1-x));
-}
 
 double sigmoid(double x) {
     return 1.0 / (1.0 + exp(-x));
@@ -197,20 +202,20 @@ double sigmoid_derivative(double x) {
 
 layer *
 init_layer(double (*activation)(double), double (*activation_derivative)(double), int input_size, int output_size) {
-    layer *l = (layer*)malloc(sizeof(layer));
+    layer *l = (layer *) malloc(sizeof(layer));
     l->activation = activation;
     l->activation_derivative = activation_derivative;
-    l->biases = calloc(output_size,sizeof(double));
+    l->biases = calloc(output_size, sizeof(double));
     l->init = true;
     l->output_size = output_size;
     l->input_size = input_size;
     l->weights = init_matrix(output_size, input_size, 0);
-    srand( time ( NULL));
-    double lim = pow(6.0/input_size+output_size,0.5);
-    for(int i = 0; i < output_size; i++){
-        l->biases[i]=0;
-        for(int j = 0;j<input_size;j++){
-            l->weights->data[i][j] = get_num(-lim,lim);
+    srand(time(NULL));
+    double lim = pow(6.0 / input_size + output_size, 0.5);
+    for (int i = 0; i < output_size; i++) {
+        l->biases[i] = 0;
+        for (int j = 0; j < input_size; j++) {
+            l->weights->data[i][j] = get_num(-lim, lim);
         }
     }
     return l;
@@ -219,6 +224,11 @@ init_layer(double (*activation)(double), double (*activation_derivative)(double)
 void print_layer(const layer *l1) {
     printf("This layer has %d inputs, %d outputs\nWeights:", l1->input_size, l1->output_size);
     print_matrix(l1->weights);
+    printf("biases:\n");
+    for(int i = 0 ; i < l1->output_size;i++){
+        printf("%f\t",l1->biases[i]);
+    }
+
 }
 
 matrix *weighted_sum(const layer *l1, matrix *inputs) {
@@ -227,7 +237,7 @@ matrix *weighted_sum(const layer *l1, matrix *inputs) {
 }
 
 matrix *activated_sum(const layer *l1, matrix *inputs) {
-    matrix* weighted = weighted_sum(l1,inputs);
+    matrix *weighted = weighted_sum(l1, inputs);
     for (int i = 0; i < weighted->height; i++) {
         weighted->data[i][0] += l1->biases[i];
 //        weighted->data[i][0] = l1->activation(weighted->data[i][0]);
@@ -241,29 +251,31 @@ typedef struct network {
     int network_size;
     double learning_rate;
     double weight_decay;
-    matrix* (*error)(matrix *, matrix *);
 
-    matrix* (*error_derivative)(matrix *, matrix *);
+    matrix *(*error)(matrix *, matrix *);
+
+    matrix *(*error_derivative)(matrix *, matrix *);
 
     bool init;
 } network;
+
 void print_network(network *net) {
     for (int i = 0; i < net->network_size - 1; i++) {
         print_layer(net->layers[i]);
     }
 }
 
-network *init_network(const int *layer_sizes, int network_size, double (*activation)(double),
-                      double (*activation_derivative)(double), matrix* (*error)(matrix *, matrix *),
-                      matrix * (*error_derivative)(matrix *, matrix *),double learning_rate,double weight_decay) {
-    network *net = (network*)malloc(sizeof(network));
+network *init_network(const int *layer_sizes, int network_size, double (**activations)(double),
+                      double (**activation_derivatives)(double), matrix *(*error)(matrix *, matrix *),
+                      matrix *(*error_derivative)(matrix *, matrix *), double learning_rate, double weight_decay) {
+    network *net = (network *) malloc(sizeof(network));
     net->network_size = network_size;
     net->error = error;
     net->error_derivative = error_derivative;
     net->init = true;
-    net->layers = (layer**)calloc(network_size - 1, sizeof(layer *));
+    net->layers = (layer **) calloc(network_size - 1, sizeof(layer *));
     for (int i = 0; i < network_size - 1; i++) {
-        net->layers[i] = init_layer(activation, activation_derivative, layer_sizes[i], layer_sizes[i + 1]);
+        net->layers[i] = init_layer(activations[i], activation_derivatives[i], layer_sizes[i], layer_sizes[i + 1]);
     }
     net->learning_rate = learning_rate;
     net->weight_decay = weight_decay;
@@ -271,22 +283,16 @@ network *init_network(const int *layer_sizes, int network_size, double (*activat
 }
 
 
-matrix *feed_forward(layer* l, matrix *inputs) {
+matrix *feed_forward(layer *l, matrix *inputs) {
     matrix *ret = activated_sum(l, inputs);
-    for (int i  = 0; i < ret->height;i++)
-        for (int j =0;j<ret->height;j++)
+    for (int i = 0; i < ret->height; i++)
+        for (int j = 0; j < ret->height; j++)
             ret->data[i][j] = l->activation(ret->data[i][j]);
     return ret;
 }
 
 
-
-
-
-
-
-
-matrix* mse_derivative(matrix* prediction, matrix* true_value) {
+matrix *mse_derivative(matrix *prediction, matrix *true_value) {
     matrix *ret = subtraction(true_value, prediction);
     return ret;
 }
@@ -299,17 +305,17 @@ double mae_derivative(matrix *prediction, matrix *true_value) {
 }
 
 
-matrix* mse(matrix *prediction, matrix *true_value) {
+matrix *mse(matrix *prediction, matrix *true_value) {
     matrix *temp = subtraction(prediction, true_value);
-    matrix *ret = matrix_pow(temp,2);
+    matrix *ret = matrix_pow(temp, 2);
     free(temp);
-//    temp = ret;
-//    ret = multiply_matrix_vals(ret,1.0/prediction->height);
-//    free(temp);
+    temp = ret;
+    ret = multiply_matrix_vals(ret, 1.0 / prediction->height);
+    free(temp);
     return ret;
 }
 
-matrix* mae(matrix *prediction, matrix *true_value) {
+matrix *mae(matrix *prediction, matrix *true_value) {
     matrix *temp = subtraction(prediction, true_value);
     matrix *ret = matrix_abs(temp);
     free(temp);
@@ -317,20 +323,18 @@ matrix* mae(matrix *prediction, matrix *true_value) {
 }
 
 
-
-
-matrix* get_losses(layer* l, matrix* errors){
-    matrix* weight_sums = init_matrix(l->output_size,1,0);
-    for(int i = 0; i < l->input_size;i++){
-        for(int j = 0;j<l->output_size;j++)
+matrix *get_losses(layer *l, matrix *errors) {
+    matrix *weight_sums = init_matrix(l->output_size, 1, 0);
+    for (int i = 0; i < l->input_size; i++) {
+        for (int j = 0; j < l->output_size; j++)
             weight_sums->data[j][0] += l->weights->data[j][i];
     }
-    matrix* fractioned_weights = copy_matrix(l->weights);
-    for(int i = 0; i < fractioned_weights->height;i++){
-        for(int j = 0;j<fractioned_weights->width;j++)
+    matrix *fractioned_weights = copy_matrix(l->weights);
+    for (int i = 0; i < fractioned_weights->height; i++) {
+        for (int j = 0; j < fractioned_weights->width; j++)
             fractioned_weights->data[i][j] /= weight_sums->data[i][0];
     }
-    matrix* weighted_errors = multiply(errors,fractioned_weights);
+    matrix *weighted_errors = multiply(errors, fractioned_weights);
     print_matrix(errors);
     print_matrix(weight_sums);
     print_matrix(fractioned_weights);
@@ -343,22 +347,22 @@ matrix* get_losses(layer* l, matrix* errors){
 
 void backpropogate(network *net, matrix *inputs, matrix *true_value) {
     matrix *temp = inputs;
-    matrix ** outputs = calloc(net->network_size , sizeof(matrix*));
+    matrix **outputs = calloc(net->network_size, sizeof(matrix *));
     outputs[0] = copy_matrix(temp);
-    matrix ** nets = calloc(net->network_size -1, sizeof(matrix*));
+    matrix **nets = calloc(net->network_size - 1, sizeof(matrix *));
     matrix *prediction;
     // getting the predictions and nets
-    for(int i = 0 ; i < net->network_size-1;i++){
-        nets[i] = activated_sum(net->layers[i],temp);
+    for (int i = 0; i < net->network_size - 1; i++) {
+        nets[i] = activated_sum(net->layers[i], temp);
         prediction = copy_matrix(nets[i]);
-        for (int j  = 0; j < prediction->height;j++)
-            for (int k =0;k<prediction->height;k++)
+        for (int j = 0; j < prediction->height; j++)
+            for (int k = 0; k < prediction->width; k++)
                 prediction->data[j][k] = net->layers[i]->activation(prediction->data[j][k]);
-        outputs[i+1] = copy_matrix(prediction);
+        outputs[i + 1] = copy_matrix(prediction);
         free(prediction);
-        temp = outputs[i+1];
+        temp = outputs[i + 1];
     }
-    matrix * losses = net->error_derivative(temp,true_value);
+    matrix *losses = net->error_derivative(temp, true_value);
     printf("\n\n\nloss:%f\ninputs:",net->error(temp,true_value)->data[0][0]);
     print_matrix(inputs);
     printf("outputs:");
@@ -366,49 +370,69 @@ void backpropogate(network *net, matrix *inputs, matrix *true_value) {
     printf("answer:");
     print_matrix(true_value);
 //    print_network(net);
-    prediction = nets[net->network_size-2];
-    matrix * lambdas_l =init_matrix(net->layers[net->network_size - 2]->output_size, 1, 0);
-    matrix * gradiants = init_matrix(net->layers[net->network_size - 2]->output_size,net->layers[net->network_size - 2]->input_size,0);
-    double sum = matrix_sum(net->layers[net->network_size-2]->weights);
+    prediction = nets[net->network_size - 2];
+    matrix *lambdas_l = init_matrix(net->layers[net->network_size - 2]->output_size, 1, 0);
+    matrix *gradiants = init_matrix(net->layers[net->network_size - 2]->output_size,
+                                    net->layers[net->network_size - 2]->input_size, 0);
+    double * bias_grads = calloc(net->layers[net->network_size - 2]->output_size,sizeof(double));
+    double sum = matrix_sum(net->layers[net->network_size - 2]->weights);
     // the output layer
-    for(int i =0;i<net->layers[net->network_size-2]->output_size;i++){
-        lambdas_l->data[i][0] = losses->data[i][0] * net->layers[net->network_size-2]->activation_derivative(prediction->data[i][0]);
-        for(int j=0;j<net->layers[net->network_size-2]->input_size;j++){
+    for (int i = 0; i < net->layers[net->network_size - 2]->output_size; i++) {
+        lambdas_l->data[i][0] =
+                losses->data[i][0] * net->layers[net->network_size - 2]->activation_derivative(prediction->data[i][0]);
+        bias_grads[i] = lambdas_l->data[i][0] * net->learning_rate;
+        for (int j = 0; j < net->layers[net->network_size - 2]->input_size; j++) {
 //            net->layers[net->network_size-2]->weights->data[i][j] -= output * lambdas_l->data[i][0];
-            gradiants->data[i][j] = outputs[net->network_size-2]->data[j][0] * lambdas_l->data[i][0] + sum*2*net->weight_decay;
+            gradiants->data[i][j] =
+                    outputs[net->network_size - 2]->data[j][0] * lambdas_l->data[i][0];
         }
     }
     // the non output layers
-    matrix * lambdas_j;
-    for(int i = net->network_size-3;i>=0;i--){
+    matrix *lambdas_j;
+    for (int i = net->network_size - 3; i >= 0; i--) {
         sum = matrix_sum(net->layers[i]->weights);
-        lambdas_j =init_matrix(net->layers[i]->output_size,1,0);
-        // calculating the lambdas for the j layer and applying the prev gradiants
-        for(int j=0;j<net->layers[i]->output_size;j++){
-            for (int k = 0; k < lambdas_l->height;k++){
+        lambdas_j = init_matrix(net->layers[i]->output_size, 1, 0);
+        // calculating the lambdas for the j layer
+        for (int j = 0; j < net->layers[i]->output_size; j++) {
+            for (int k = 0; k < lambdas_l->height; k++) {
                 //getting the lambdas
-                lambdas_j->data[j][0] += net->layers[i+1]->weights->data[k][j]*lambdas_l->data[k][0];
+                lambdas_j->data[j][0] += net->layers[i + 1]->weights->data[k][j] * lambdas_l->data[k][0];
                 //applying the gradiants
 //                net->layers[i+1]->weights->data[k][j] -= gradiants->data[k][j] *net->learning_rate;
             }
             lambdas_j->data[j][0] *= net->layers[i]->activation_derivative(nets[i]->data[j][0]);
         }
-        temp = net->layers[i+1]->weights;
-        net->layers[i+1]->weights = subtraction(temp,gradiants);
+//        print_matrix(lambdas_j);
+        //applying the prev gradiants
+//        print_matrix(gradiants);
+        temp = gradiants;
+        gradiants = multiply_matrix_vals(temp, net->learning_rate);
         free(temp);
+        temp = net->layers[i + 1]->weights;
+        net->layers[i + 1]->weights = addition(temp, gradiants);
+        free(temp);
+        free(gradiants);
+        for (int j = 0; j < net->layers[i + 1]->output_size; ++j) {
+            net->layers[i + 1]->biases[j] -= bias_grads[j];
+        }
+        free(bias_grads);
         // getting the gradiants
-        gradiants = init_matrix(net->layers[i]->output_size,net->layers[i]->input_size,0);
-        for(int j=0;j<net->layers[i]->output_size;j++){
-            for(int k = 0;k<net->layers[i]->input_size;k++){
-                gradiants->data[i][j] = outputs[i]->data[k][0]*lambdas_j->data[j][0] + sum*2*net->weight_decay;
+        bias_grads = calloc(net->layers[i]->output_size,sizeof(double));
+        gradiants = init_matrix(net->layers[i]->output_size, net->layers[i]->input_size, 0);
+        for (int j = 0; j < net->layers[i]->output_size; j++) {
+            bias_grads[j] = lambdas_j->data[j][0] * net->learning_rate;
+            for (int k = 0; k < net->layers[i]->input_size; k++) {
+                gradiants->data[j][k] = outputs[i]->data[k][0] * lambdas_j->data[j][0];
             }
         }
-        lambdas_l = copy_matrix(lambdas_j);
-        free(lambdas_j);
+        lambdas_l = lambdas_j;
     }
     // applying the last gradiants
+    temp = gradiants;
+    gradiants = multiply_matrix_vals(temp, net->learning_rate);
+    free(temp);
     temp = net->layers[0]->weights;
-    net->layers[0]->weights = subtraction(temp,gradiants);
+    net->layers[0]->weights = addition(temp, gradiants);
     free(gradiants);
     free(lambdas_l);
     free(temp);
@@ -420,17 +444,30 @@ void backpropogate(network *net, matrix *inputs, matrix *true_value) {
 
 
 int main() {
-    int layer_sizes[3] = {2,4,1};
-    network *net = init_network(layer_sizes, 3, relu, relu_derivative, mse, mse_derivative,0.0001,0.01);
-    int data_size = 5000000;
-    matrix** inputs = calloc(data_size,sizeof(matrix*));
-    matrix** true_vals = calloc(data_size,sizeof(matrix*));
+    int net_size = 4;
+    int *layer_sizes = calloc(net_size,sizeof(int));
+    layer_sizes[0] = 1;
+    layer_sizes[1] = 8;
+    layer_sizes[2] = 16;
+    layer_sizes[3] = 1;
+    double (**activations)(double) = calloc(net_size-1,sizeof(double(*)(double)));
+    activations[0] = sigmoid;
+    activations[1] = sigmoid;
+    activations[2] = linear;
+    double (**activations_div)(double) = calloc(net_size-1,sizeof(double(*)(double)));
+    activations_div[0] = sigmoid_derivative;
+    activations_div[1] = sigmoid_derivative;
+    activations_div[2] = linear_div;
+    network *net = init_network(layer_sizes, net_size, activations, activations_div, mse, mse_derivative, 0.001, 0.01);
+    int data_size = 50000;
+    matrix **inputs = calloc(data_size, sizeof(matrix *));
+    matrix **true_vals = calloc(data_size, sizeof(matrix *));
     double num = 0;
-    for(int i = 0 ; i < data_size ; i++){
-        inputs[i] = init_matrix(2,1, 0);
-        inputs[i]->data[0][0] = get_num(0.0,10.0);
-        inputs[i]->data[1][0] = get_num(0.0,10.0);
-        true_vals[i] = init_matrix(1,1, 8);
+    for (int i = 0; i < data_size; i++) {
+        num = get_num(0.0, 10.0);
+        inputs[i] = init_matrix(1, 1, 0);
+        inputs[i]->data[0][0] = num;
+        true_vals[i] = init_matrix(1, 1, num +10);
 //        if (inputs[i]->data[0][0] >= 3.0){
 //            true_vals[i] = init_matrix(1,1, 0);
 //        }
@@ -438,8 +475,8 @@ int main() {
 //            true_vals[i] = init_matrix(1,1, 100);
 //        }
     }
-    for(int i = 0; i < data_size;i++){
-        backpropogate(net,inputs[i],true_vals[i]);
+    for (int i = 0; i < data_size; i++) {
+        backpropogate(net, inputs[i], true_vals[i]);
     }
     free(inputs);
     free(true_vals);
