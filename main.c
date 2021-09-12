@@ -363,46 +363,46 @@ void backpropogate(network *net, matrix *inputs, matrix *true_value) {
         temp = outputs[i + 1];
     }
     matrix *losses = net->error_derivative(temp, true_value);
-    printf("\n\n\nloss:%f\ninputs:",net->error(temp,true_value)->data[0][0]);
-    print_matrix(inputs);
-    printf("outputs:");
-    print_matrix(temp);
-    printf("answer:");
-    print_matrix(true_value);
-//    print_network(net);
+//    printf("\n\n\nloss:%f\ninputs:",net->error(temp,true_value)->data[0][0]);
+//    print_matrix(inputs);
+//    printf("outputs:");
+//    print_matrix(temp);
+//    printf("answer:");
+//    print_matrix(true_value);
+    print_network(net);
     prediction = nets[net->network_size - 2];
-    matrix *lambdas_l = init_matrix(net->layers[net->network_size - 2]->output_size, 1, 0);
+    matrix *deltas_l = init_matrix(net->layers[net->network_size - 2]->output_size, 1, 0);
     matrix *gradiants = init_matrix(net->layers[net->network_size - 2]->output_size,
                                     net->layers[net->network_size - 2]->input_size, 0);
     double * bias_grads = calloc(net->layers[net->network_size - 2]->output_size,sizeof(double));
     double sum = matrix_sum(net->layers[net->network_size - 2]->weights);
     // the output layer
     for (int i = 0; i < net->layers[net->network_size - 2]->output_size; i++) {
-        lambdas_l->data[i][0] =
+        deltas_l->data[i][0] =
                 losses->data[i][0] * net->layers[net->network_size - 2]->activation_derivative(prediction->data[i][0]);
-        bias_grads[i] = lambdas_l->data[i][0] * net->learning_rate;
+        bias_grads[i] = deltas_l->data[i][0] * net->learning_rate;
         for (int j = 0; j < net->layers[net->network_size - 2]->input_size; j++) {
-//            net->layers[net->network_size-2]->weights->data[i][j] -= output * lambdas_l->data[i][0];
+//            net->layers[net->network_size-2]->weights->data[i][j] -= output * deltas_l->data[i][0];
             gradiants->data[i][j] =
-                    outputs[net->network_size - 2]->data[j][0] * lambdas_l->data[i][0];
+                    outputs[net->network_size - 2]->data[j][0] * deltas_l->data[i][0];
         }
     }
     // the non output layers
-    matrix *lambdas_j;
+    matrix *deltas_j;
     for (int i = net->network_size - 3; i >= 0; i--) {
         sum = matrix_sum(net->layers[i]->weights);
-        lambdas_j = init_matrix(net->layers[i]->output_size, 1, 0);
+        deltas_j = init_matrix(net->layers[i]->output_size, 1, 0);
         // calculating the lambdas for the j layer
         for (int j = 0; j < net->layers[i]->output_size; j++) {
-            for (int k = 0; k < lambdas_l->height; k++) {
+            for (int k = 0; k < deltas_l->height; k++) {
                 //getting the lambdas
-                lambdas_j->data[j][0] += net->layers[i + 1]->weights->data[k][j] * lambdas_l->data[k][0];
+                deltas_j->data[j][0] += net->layers[i + 1]->weights->data[k][j] * deltas_l->data[k][0];
                 //applying the gradiants
 //                net->layers[i+1]->weights->data[k][j] -= gradiants->data[k][j] *net->learning_rate;
             }
-            lambdas_j->data[j][0] *= net->layers[i]->activation_derivative(nets[i]->data[j][0]);
+            deltas_j->data[j][0] *= net->layers[i]->activation_derivative(nets[i]->data[j][0]);
         }
-//        print_matrix(lambdas_j);
+//        print_matrix(deltas_j);
         //applying the prev gradiants
 //        print_matrix(gradiants);
         temp = gradiants;
@@ -420,12 +420,12 @@ void backpropogate(network *net, matrix *inputs, matrix *true_value) {
         bias_grads = calloc(net->layers[i]->output_size,sizeof(double));
         gradiants = init_matrix(net->layers[i]->output_size, net->layers[i]->input_size, 0);
         for (int j = 0; j < net->layers[i]->output_size; j++) {
-            bias_grads[j] = lambdas_j->data[j][0] * net->learning_rate;
+            bias_grads[j] = deltas_j->data[j][0] * net->learning_rate;
             for (int k = 0; k < net->layers[i]->input_size; k++) {
-                gradiants->data[j][k] = outputs[i]->data[k][0] * lambdas_j->data[j][0];
+                gradiants->data[j][k] = outputs[i]->data[k][0] * deltas_j->data[j][0];
             }
         }
-        lambdas_l = lambdas_j;
+        deltas_l = deltas_j;
     }
     // applying the last gradiants
     temp = gradiants;
@@ -433,8 +433,14 @@ void backpropogate(network *net, matrix *inputs, matrix *true_value) {
     free(temp);
     temp = net->layers[0]->weights;
     net->layers[0]->weights = addition(temp, gradiants);
+    //applying the last bias gradiants
+    for (int j = 0; j < net->layers[0]->output_size; ++j) {
+        net->layers[0]->biases[j] -= bias_grads[j];
+    }
+    free(bias_grads);
+
     free(gradiants);
-    free(lambdas_l);
+    free(deltas_l);
     free(temp);
     free(outputs);
     free(nets);
@@ -459,21 +465,21 @@ int main() {
     activations_div[1] = sigmoid_derivative;
     activations_div[2] = linear_div;
     network *net = init_network(layer_sizes, net_size, activations, activations_div, mse, mse_derivative, 0.001, 0.01);
-    int data_size = 50000;
+    int data_size = 500000;
     matrix **inputs = calloc(data_size, sizeof(matrix *));
     matrix **true_vals = calloc(data_size, sizeof(matrix *));
     double num = 0;
     for (int i = 0; i < data_size; i++) {
         num = get_num(0.0, 10.0);
-        inputs[i] = init_matrix(1, 1, 0);
-        inputs[i]->data[0][0] = num;
-        true_vals[i] = init_matrix(1, 1, num +10);
+        inputs[i] = init_matrix(1, 1, num);
+        true_vals[i] = init_matrix(1, 1, num *2);
 //        if (inputs[i]->data[0][0] >= 3.0){
 //            true_vals[i] = init_matrix(1,1, 0);
 //        }
 //        else{
-//            true_vals[i] = init_matrix(1,1, 100);
+//            true_vals[i] = init_matrix(1,1, 10);
 //        }
+//        print_network(net);
     }
     for (int i = 0; i < data_size; i++) {
         backpropogate(net, inputs[i], true_vals[i]);
